@@ -1,0 +1,339 @@
+<!-- ================= LAYAR UTAMA DASBOR DENGAN BOTTOM NAVBAR PREMIUM (1000347438.jpg) ================= -->
+<style>
+  /* ANIMASI BOTTOM NAVBAR "FLOATING BUBBLE POP" SEPERTI SCREENSHOT:
+    Didesain presisi dengan tinggi kapsul h-16 aslinya agar menonjol elegan saat aktif.
+  */
+  .bubble-nav-item {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .bubble-active-circle {
+    transform: translateY(-14px) scale(1.05);
+    background-color: #3b82f6; /* Warna Biru Terang Sesuai Gambar */
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
+    color: white !important;
+    width: 44px;
+    height: 44px;
+  }
+  .bubble-label {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: absolute;
+    bottom: 4px;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .bubble-label-active {
+    opacity: 1;
+    transform: translateY(0);
+    color: #3b82f6;
+  }
+</style>
+
+<div class="flex-1 flex flex-col h-full relative overflow-hidden">
+  
+  <!-- HEADER -->
+  <header class="bg-theme-primary text-white px-4 py-2 flex items-center justify-between shadow-md sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <!-- Back Button -->
+      <button id="backBtn" class="hidden hover:bg-amber-600 p-1 rounded-full transition-colors" onclick="goBack()">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      </button>
+      <!-- Menu Drawer Button -->
+      <button id="menuBtn" class="hover:bg-amber-600 p-1 rounded-full transition-colors" onclick="toggleMenu()">
+        <i data-lucide="more-vertical" class="w-5 h-5"></i>
+      </button>
+      <h1 id="headerTitle" class="text-sm font-bold tracking-wide uppercase">STOK GUDANG</h1>
+    </div>
+    
+    <div class="flex items-center gap-1.5">
+      <span id="roleBadge" class="bg-white/20 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">ROLE</span>
+      <button onclick="toggleSearchBar()" class="hover:bg-amber-600 p-1 rounded-full transition-colors relative">
+        <i data-lucide="search" class="w-4 h-4"></i>
+      </button>
+      <button onclick="fetchData()" class="hover:bg-amber-600 p-1 rounded-full transition-colors">
+        <i id="refreshIcon" data-lucide="rotate-cw" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- SEARCH BAR CONTAINER -->
+  <div id="searchBarContainer" class="hidden bg-amber-50 px-4 py-2 border-b border-amber-100 flex items-center gap-2 transition-all">
+    <i data-lucide="search" class="w-4 h-4 text-amber-600"></i>
+    <input type="text" id="searchInput" oninput="handleGlobalSearch()" placeholder="Cari data..." class="w-full bg-transparent border-none text-sm outline-none text-gray-800 placeholder-amber-400">
+    <button onclick="clearGlobalSearch()" class="text-amber-600 hover:text-amber-800">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+  </div>
+
+  <!-- MAIN SCROLLABLE CONTAINER -->
+  <main class="flex-1 overflow-y-auto bg-gray-50 pb-28 no-scrollbar">
+    <?!= include('Stok'); ?>
+    <?!= include('Klinik'); ?>
+    <?!= include('Entry'); ?>
+    <?!= include('Order'); ?>
+    <?!= include('Return'); ?>
+    <?!= include('Faktur'); ?>
+  </main>
+
+  <!-- BOTTOM NAVIGATION (DENGAN TINGGI ASLI h-16 & ICON OUTLINE PREMIUM SESUAI SCREENSHOT 1000347438.jpg) -->
+  <nav id="bottomNav" class="bg-white border border-gray-150 rounded-full absolute bottom-3 left-0 right-0 mx-6 grid h-16 z-40 shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-all overflow-visible">
+    
+    <!-- Tab Stok (Ikon Rumah/Gudang Outline - Posisi Kiri) -->
+    <button id="tab-stok" onclick="switchView('stok')" class="flex flex-col items-center justify-center h-full transition-all relative overflow-visible">
+      <div class="bubble-nav-item text-gray-400 bg-transparent">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+      </div>
+      <span class="bubble-label">STOK</span>
+    </button>
+    
+    <!-- Tab Input Data / Entry (Ikon Lingkaran Panah Bawah Outline - Posisi Tengah Kiri) -->
+    <button id="tab-entry" onclick="switchView('entry')" class="flex flex-col items-center justify-center h-full transition-all relative overflow-visible hidden">
+      <div class="bubble-nav-item text-gray-400 bg-transparent">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="8 12 12 16 16 12" />
+          <line x1="12" y1="8" x2="12" y2="16" />
+        </svg>
+      </div>
+      <span class="bubble-label">ENTRY</span>
+    </button>
+    
+    <!-- Tab Klinik (Ikon Dua Pengguna Saling Menumpuk Outline - Posisi Kanan) -->
+    <button id="tab-klinik" onclick="switchView('klinik')" class="flex flex-col items-center justify-center h-full transition-all relative overflow-visible">
+      <div class="bubble-nav-item text-gray-400 bg-transparent">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      </div>
+      <span class="bubble-label">KLINIK</span>
+    </button>
+
+    <!-- Tab Return (Ikon Putar Balik Outline - Disesuaikan Serasi Dengan Desain Lainnya) -->
+    <button id="tab-return" onclick="switchView('return')" class="flex flex-col items-center justify-center h-full transition-all relative overflow-visible">
+      <div class="bubble-nav-item text-gray-400 bg-transparent">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <polyline points="3 3 3 8 8 8" />
+        </svg>
+      </div>
+      <span class="bubble-label">RETURN</span>
+    </button>
+    
+    <!-- Tab Faktur (Ikon Dokumen / File Checklist Outline) -->
+    <button id="tab-faktur" onclick="switchView('faktur')" class="flex flex-col items-center justify-center h-full transition-all relative overflow-visible hidden">
+      <div class="bubble-nav-item text-gray-400 bg-transparent">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+      </div>
+      <span class="bubble-label">FAKTUR</span>
+    </button>
+    
+  </nav>
+
+  <!-- SIDEBAR DRAWER OVERLAY -->
+  <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/40 z-50 transition-opacity" onclick="toggleMenu()"></div>
+  <!-- SIDEBAR MENU DRAWER -->
+  <div id="sidebar" class="hidden fixed top-0 left-0 h-full w-64 bg-white z-50 shadow-2xl flex flex-col justify-between transform -translate-x-full transition-transform duration-300">
+    <div>
+      <div class="bg-theme-primary p-6 text-white flex flex-col items-center gap-3">
+        <div class="w-16 h-16 rounded-full border-2 border-white flex items-center justify-center bg-white/10 shadow-inner">
+          <span class="text-white text-3xl font-serif font-extrabold select-none">E</span>
+        </div>
+        <div class="text-center">
+          <h3 class="font-bold text-lg leading-tight">Ellis Estetika</h3>
+          <p id="menuConnectionStatus" class="text-xs text-amber-100 font-bold">Koneksi Aktif</p>
+        </div>
+      </div>
+      <div class="p-4 space-y-1">
+        <button onclick="switchView('stok'); toggleMenu();" class="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-amber-50 hover:text-theme-primary rounded-lg text-sm font-medium transition-colors">
+          <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          Manajemen Stok
+        </button>
+        <button id="menu-entry-sidebar" onclick="switchView('entry'); toggleMenu();" class="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-amber-50 hover:text-theme-primary rounded-lg text-sm font-medium transition-colors hidden">
+          <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="8 12 12 16 16 12" />
+          </svg>
+          Input Barang Masuk
+        </button>
+        <button onclick="switchView('klinik'); toggleMenu();" class="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-amber-50 hover:text-theme-primary rounded-lg text-sm font-medium transition-colors">
+          <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+          </svg>
+          Daftar Klinik Cabang
+        </button>
+        <button onclick="switchView('return'); toggleMenu();" class="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-amber-50 hover:text-theme-primary rounded-lg text-sm font-medium transition-colors">
+          <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          </svg>
+          Daftar Retur Barang
+        </button>
+        <button id="menu-faktur-sidebar" onclick="switchView('faktur'); toggleMenu();" class="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-amber-50 hover:text-theme-primary rounded-lg text-sm font-medium transition-colors hidden">
+          <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          </svg>
+          Faktur & Rekap PDF
+        </button>
+        <div class="border-t border-gray-100 my-2"></div>
+        <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-3 text-rose-600 hover:bg-rose-50 rounded-lg text-sm font-medium transition-colors">
+          <i data-lucide="log-out" class="w-5 h-5"></i> Keluar (Logout)
+        </button>
+      </div>
+    </div>
+    <div class="p-4 bg-gray-50 border-t border-gray-150 text-center text-[10px] text-gray-400 font-bold">
+      Ellis Estetika Modular &copy; 2026
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggleMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar && overlay) {
+      if (sidebar.classList.contains('hidden')) {
+        sidebar.classList.remove('hidden');
+        overlay.classList.remove('hidden');
+        setTimeout(() => sidebar.classList.remove('-translate-x-full'), 10);
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        setTimeout(() => {
+          sidebar.classList.add('hidden');
+          overlay.classList.add('hidden');
+        }, 300);
+      }
+    }
+  }
+
+  function toggleSearchBar() {
+    const container = document.getElementById('searchBarContainer');
+    if (container) {
+      if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        const inputField = document.getElementById('searchInput');
+        if (inputField) inputField.focus();
+      } else {
+        clearGlobalSearch();
+      }
+    }
+  }
+
+  function handleGlobalSearch() {
+    state.searchQuery = document.getElementById('searchInput').value || '';
+    if (state.activeView === 'stok') renderStokView();
+    else if (state.activeView === 'klinik') renderKlinikGrid();
+    else if (state.activeView === 'return') renderReturnView();
+    else if (state.activeView === 'clinic-detail') renderClinicDetailView();
+  }
+
+  function clearGlobalSearch() {
+    const inp = document.getElementById('searchInput');
+    if (inp) inp.value = '';
+    state.searchQuery = '';
+    const container = document.getElementById('searchBarContainer');
+    if (container) container.classList.add('hidden');
+    handleGlobalSearch();
+  }
+
+  function logout() {
+    sessionStorage.removeItem('rg_user_session');
+    sessionStorage.removeItem('rg_role_session');
+    sessionStorage.removeItem('rg_clinic_session');
+    state.currentUser = null;
+    state.currentRole = null;
+    state.currentClinicId = null;
+    const loginScr = document.getElementById('loginScreen');
+    if (loginScr) loginScr.classList.remove('hidden');
+    showToast("🔐 Sesi login ditutup.");
+    toggleMenu();
+  }
+
+  /**
+   * MEMPERBARUI INDIKATOR MENU TAB DENGAN INTEGRASI RETURN STANDALONE & TINGGI KAPSUL h-16
+   */
+  function updateTabIndicator(activeView) {
+    const tabStok = document.getElementById('tab-stok');
+    const tabEntry = document.getElementById('tab-entry');
+    const tabKlinik = document.getElementById('tab-klinik');
+    const tabReturn = document.getElementById('tab-return');
+    const tabFaktur = document.getElementById('tab-faktur');
+
+    const userRole = (state.currentRole || '').toUpperCase();
+    const isEntryAdminOrOwner = userRole === 'ADMIN' || userRole === 'OWNER';
+    const isFakturOwnerOnly = userRole === 'OWNER';
+
+    const tabs = [tabStok, tabEntry, tabKlinik, tabReturn, tabFaktur];
+
+    tabs.forEach(tab => {
+      if (tab) {
+        if (tab.id === 'tab-entry' && !isEntryAdminOrOwner) {
+          tab.classList.add('hidden');
+        }
+        if (tab.id === 'tab-faktur' && !isFakturOwnerOnly) {
+          tab.classList.add('hidden');
+        }
+        
+        const circle = tab.querySelector('.bubble-nav-item');
+        const label = tab.querySelector('.bubble-label');
+        if (circle) {
+          circle.classList.remove('bubble-active-circle');
+          circle.classList.add('text-gray-400');
+        }
+        if (label) {
+          label.classList.remove('bubble-label-active');
+        }
+      }
+    });
+
+    let activeBtn = null;
+    if (activeView === 'stok') activeBtn = tabStok;
+    else if (activeView === 'entry' && isEntryAdminOrOwner) activeBtn = tabEntry;
+    else if (activeView === 'klinik') activeBtn = tabKlinik;
+    else if (activeView === 'return') activeBtn = tabReturn;
+    else if (activeView === 'faktur' && isFakturOwnerOnly) activeBtn = tabFaktur;
+
+    if (activeBtn) {
+      const circle = activeBtn.querySelector('.bubble-nav-item');
+      const label = activeBtn.querySelector('.bubble-label');
+      if (circle) {
+        circle.classList.remove('text-gray-400');
+        circle.classList.add('bubble-active-circle');
+      }
+      if (label) {
+        label.classList.add('bubble-label-active');
+      }
+    }
+  }
+
+  window.toggleMenu = toggleMenu;
+  window.toggleSearchBar = toggleSearchBar;
+  window.handleGlobalSearch = handleGlobalSearch;
+  window.clearGlobalSearch = clearGlobalSearch;
+  window.logout = logout;
+</script>
