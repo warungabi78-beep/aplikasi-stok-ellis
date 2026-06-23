@@ -1,0 +1,259 @@
+<!-- ================= VIEW: MANAJEMEN FAKTUR & REKAP PDF (OWNER ONLY) ================= -->
+<section id="screen-faktur" class="hidden p-4 space-y-6">
+  
+  <!-- CARD 1: INPUT FAKTUR PEMBELIAN -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 space-y-5">
+    <div class="border-b border-gray-100 pb-2 flex items-center gap-2">
+      <i data-lucide="receipt" class="w-5 h-5 text-theme-primary"></i>
+      <div>
+        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide">INPUT FAKTUR PEMBELIAN</h3>
+        <p class="text-[10px] text-gray-400">Pencatatan keuangan faktur barang masuk dari Supplier.</p>
+      </div>
+    </div>
+
+    <!-- Tanggal Faktur -->
+    <div class="space-y-1.5">
+      <label class="block text-xs font-semibold text-gray-500 tracking-wider">TANGGAL FAKTUR <span class="text-rose-500">*</span></label>
+      <input type="date" id="faktur-tanggal" onchange="validateFakturInputs()" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 text-gray-700 font-semibold">
+    </div>
+
+    <!-- No Faktur -->
+    <div class="space-y-1.5">
+      <label class="block text-xs font-semibold text-gray-500 tracking-wider">NO FAKTUR <span class="text-rose-500">*</span></label>
+      <input type="text" id="faktur-no" oninput="validateFakturInputs()" placeholder="Contoh: INV/2026/8892" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 text-gray-700 font-semibold">
+    </div>
+
+    <!-- Dropdown: Supplier -->
+    <div class="space-y-1.5">
+      <label class="block text-xs font-semibold text-gray-500 tracking-wider">SUPPLIER <span class="text-rose-500">*</span></label>
+      <div class="relative">
+        <select id="faktur-supplier" onchange="validateFakturInputs()" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 appearance-none text-gray-700 font-semibold uppercase">
+          <!-- Terisi via JS -->
+        </select>
+        <div class="absolute right-3 top-3.5 pointer-events-none text-gray-400"><i data-lucide="chevron-down" class="w-4 h-4"></i></div>
+      </div>
+    </div>
+
+    <!-- Total Harga -->
+    <div class="space-y-1.5">
+      <label class="block text-xs font-semibold text-gray-500 tracking-wider">TOTAL HARGA (RP) <span class="text-rose-500">*</span></label>
+      <input type="number" id="faktur-total" value="0" min="0" oninput="validateFakturInputs()" placeholder="Masukkan nominal harga..." class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 text-gray-700 font-bold">
+    </div>
+
+    <!-- Keterangan (BARU) -->
+    <div class="space-y-1.5">
+      <label class="block text-xs font-semibold text-gray-500 tracking-wider">KETERANGAN</label>
+      <input type="text" id="faktur-keterangan" placeholder="Tambahkan catatan/keterangan faktur..." class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 text-gray-700 font-semibold">
+    </div>
+
+    <button id="btn-simpan-faktur" onclick="submitFakturRecord()" class="w-full bg-gray-300 text-gray-500 py-3.5 rounded-xl text-xs font-bold tracking-widest uppercase cursor-not-allowed transition-all" disabled>
+      SIMPAN FAKTUR
+    </button>
+  </div>
+
+  <!-- CARD 2: REKAP PDF INTEGRATION -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 space-y-5">
+    <div class="border-b border-gray-100 pb-2 flex items-center gap-2">
+      <i data-lucide="file-text" class="w-5 h-5 text-theme-primary"></i>
+      <div>
+        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide">REKAP PDF PEMBELIAN</h3>
+        <p class="text-[10px] text-gray-400">Ekspor laporan rekap faktur bulanan ke format PDF.</p>
+      </div>
+    </div>
+
+    <!-- Periode Awal -->
+    <div class="space-y-1.5">
+      <label class="block text-xs font-semibold text-gray-500 tracking-wider">TANGGAL AWAL PERIODE <span class="text-rose-500">*</span></label>
+      <input type="date" id="rekap-start" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 text-gray-700 font-semibold">
+    </div>
+
+    <!-- Periode Akhir -->
+    <div class="space-y-1.5">
+      <label class="block text-xs font-semibold text-gray-500 tracking-wider">TANGGAL AKHIR PERIODE <span class="text-rose-500">*</span></label>
+      <input type="date" id="rekap-end" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 text-gray-700 font-semibold">
+    </div>
+
+    <button onclick="generateRekapPdf()" class="w-full bg-slate-800 hover:bg-slate-900 active:scale-95 text-white py-3.5 rounded-xl text-xs font-bold tracking-widest uppercase transition-all shadow-md flex items-center justify-center gap-2">
+      <i data-lucide="file-down" class="w-4 h-4"></i>
+      <span>BUAT PDF LAPORAN</span>
+    </button>
+  </div>
+
+  <!-- ================= POPUP MODAL UNDUH REKAP PDF (SANGAT COMPATIBLE DENGAN HP & WEBVIEW) ================= -->
+  <div id="pdfDownloadModal" class="hidden fixed inset-0 bg-black/60 z-[120] flex flex-col items-center justify-center p-6 transition-all duration-300 animate-fade-in">
+    <div class="w-full max-w-sm bg-white p-6 rounded-3xl shadow-2xl border border-amber-100 flex flex-col items-center text-center space-y-4">
+      <div class="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center text-theme-primary">
+        <i data-lucide="file-check" class="w-8 h-8"></i>
+      </div>
+      <div class="space-y-1 w-full">
+        <h3 class="text-base font-bold text-gray-800">Laporan PDF Berhasil Dibuat!</h3>
+        <p id="pdfFilenameText" class="text-[10px] text-gray-400 font-bold truncate px-4"></p>
+      </div>
+      
+      <div class="w-full pt-2 flex flex-col gap-2">
+        <a id="pdfDownloadLink" href="#" target="_blank" class="w-full bg-theme-primary hover:bg-amber-600 active:scale-[0.98] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all shadow-md block text-center">
+          UNDUH LAPORAN (PDF)
+        </a>
+        <a id="pdfViewLink" href="#" target="_blank" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl text-xs font-bold tracking-wider uppercase transition-all block text-center">
+          LIHAT FILE PDF
+        </a>
+        <button onclick="hidePdfDownloadModal()" class="w-full bg-gray-50 hover:bg-gray-100 text-gray-400 py-2.5 rounded-xl text-xs font-bold tracking-wider uppercase transition-all">
+          TUTUP
+        </button>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<script>
+  function initFakturViews() {
+    const supSel = document.getElementById('faktur-supplier');
+    if (supSel) {
+      supSel.innerHTML = '';
+      
+      const defaultOpt = document.createElement('option');
+      defaultOpt.value = '';
+      defaultOpt.innerText = '-- PILIH SUPPLIER --';
+      defaultOpt.selected = true;
+      supSel.appendChild(defaultOpt);
+      
+      const suppliers = db.supplier || [];
+      suppliers.forEach(s => {
+        const name = getVal(s, 'nama_supplier', 1);
+        if (name) {
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.innerText = name.toUpperCase();
+          supSel.appendChild(opt);
+        }
+      });
+    }
+    
+    document.getElementById('faktur-tanggal').value = '';
+    document.getElementById('faktur-no').value = '';
+    document.getElementById('faktur-total').value = '0';
+    document.getElementById('faktur-keterangan').value = ''; // Reset input keterangan
+    document.getElementById('rekap-start').value = '';
+    document.getElementById('rekap-end').value = '';
+    
+    validateFakturInputs();
+  }
+
+  function validateFakturInputs() {
+    const tglInp = document.getElementById('faktur-tanggal');
+    const noInp = document.getElementById('faktur-no');
+    const supSel = document.getElementById('faktur-supplier');
+    const totInp = document.getElementById('faktur-total');
+    const simpanBtn = document.getElementById('btn-simpan-faktur');
+
+    const tgl = tglInp ? tglInp.value : '';
+    const no = noInp ? noInp.value.trim() : '';
+    const sup = supSel ? supSel.value : '';
+    const tot = totInp ? parseInt(totInp.value) || 0 : 0;
+
+    if (tgl !== '' && no !== '' && sup !== '' && tot > 0) {
+      if (simpanBtn) {
+        simpanBtn.disabled = false;
+        simpanBtn.className = "w-full bg-theme-primary hover:bg-amber-600 active:scale-95 text-white py-3.5 rounded-xl text-xs font-bold tracking-widest uppercase transition-all shadow-md";
+      }
+    } else {
+      if (simpanBtn) {
+        simpanBtn.disabled = true;
+        simpanBtn.className = "w-full bg-gray-300 text-gray-500 py-3.5 rounded-xl text-xs font-bold tracking-widest uppercase cursor-not-allowed transition-all";
+      }
+    }
+  }
+
+  function submitFakturRecord() {
+    const tglRaw = document.getElementById('faktur-tanggal').value;
+    const no = document.getElementById('faktur-no').value.trim();
+    const sup = document.getElementById('faktur-supplier').value;
+    const tot = parseInt(document.getElementById('faktur-total').value) || 0;
+    const ket = document.getElementById('faktur-keterangan').value.trim(); // Ambil data keterangan
+
+    if (tglRaw === '' || no === '' || sup === '' || tot <= 0) return;
+
+    const parts = tglRaw.split('-');
+    const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
+    const record = {
+      tanggal: formattedDate,
+      no_faktur: no,
+      supplier: sup,
+      total_harga: tot,
+      keterangan: ket // Masukkan ke record pengiriman
+    };
+
+    showLoading(true, "MENYIMPAN FAKTUR BARU...");
+
+    callServer('simpanFaktur', record)
+      .then(response => {
+        showLoading(false);
+        if (response && response.success) {
+          showToast("✅ Sukses mendaftarkan faktur pembelian!");
+          fetchData();
+          switchView('stok');
+        } else {
+          showToast("⚠️ Gagal: " + (response ? response.error : 'Format ditolak server'));
+        }
+      })
+      .catch(error => {
+        showLoading(false);
+        showToast("⚠️ Gangguan API: " + error.message);
+      });
+  }
+
+  function generateRekapPdf() {
+    const startTgl = document.getElementById('rekap-start').value;
+    const endTgl = document.getElementById('rekap-end').value;
+
+    if (startTgl === '' || endTgl === '') {
+      showToast("⚠️ Silakan isi rentang periode tanggal terlebih dahulu!");
+      return;
+    }
+
+    showLoading(true, "MEMPROSES REKAP PDF GUDANG...");
+
+    callServer('generatePdf', startTgl, endTgl)
+      .then(response => {
+        showLoading(false);
+        if (response && response.success) {
+          showPdfDownloadModal(response.url, response.viewUrl, response.filename);
+        } else {
+          showToast("⚠️ " + (response ? response.error : 'Gagal memproses ekspor.'));
+        }
+      })
+      .catch(error => {
+        showLoading(false);
+        showToast("⚠️ Gangguan Server: " + error.message);
+      });
+  }
+
+  function showPdfDownloadModal(downloadUrl, viewUrl, filename) {
+    const modal = document.getElementById('pdfDownloadModal');
+    const filenameTxt = document.getElementById('pdfFilenameText');
+    const dldBtn = document.getElementById('pdfDownloadLink');
+    const viewBtn = document.getElementById('pdfViewLink');
+
+    if (filenameTxt) filenameTxt.innerText = filename;
+    if (dldBtn) dldBtn.href = downloadUrl;
+    if (viewBtn) viewBtn.href = viewUrl;
+
+    if (modal) {
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+  }
+
+  function hidePdfDownloadModal() {
+    const modal = document.getElementById('pdfDownloadModal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  window.initFakturViews = initFakturViews;
+  window.validateFakturInputs = validateFakturInputs;
+  window.submitFakturRecord = submitFakturRecord;
+  window.generateRekapPdf = generateRekapPdf;
+  window.hidePdfDownloadModal = hidePdfDownloadModal;
+</script>
