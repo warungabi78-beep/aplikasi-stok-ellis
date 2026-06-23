@@ -1,0 +1,190 @@
+<!-- ================= VIEW: MANAJEMEN STOK GUDANG ================= -->
+<section id="screen-stok" class="p-4 hidden space-y-4">
+  
+  <!-- STOK CARDS LIST CONTAINER -->
+  <div id="stokListContainer" class="space-y-3 animate-fade-in">
+    <!-- Terisi otomatis melalui renderStokView() -->
+  </div>
+
+  <!-- FLOATING ACTION BUTTON (FAB) FOR ADMIN & OWNER (BAGIKAN STOK PDF) -->
+  <button id="stokAdminControls" onclick="openStokPdfModal()" class="hidden fixed bottom-28 right-6 md:right-[calc(50vw-11rem)] w-14 h-14 bg-theme-primary text-white rounded-full shadow-2xl hover:bg-amber-600 active:scale-95 transition-all duration-200 z-40 flex items-center justify-center border-2 border-white">
+    <i data-lucide="file-text" class="w-7 h-7"></i>
+  </button>
+
+  <!-- ================= POPUP MODAL GENERATE PDF STOK (SANGAT COMPATIBLE DENGAN HP & WEBVIEW) ================= -->
+  <div id="stokPdfModal" class="hidden fixed inset-0 bg-black/60 z-[120] flex flex-col items-center justify-center p-6 transition-all duration-300 animate-fade-in">
+    <div class="w-full max-w-sm bg-white p-6 rounded-3xl shadow-2xl border border-amber-100 flex flex-col items-center text-center space-y-4">
+      <div class="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center text-theme-primary">
+        <i data-lucide="printer" class="w-8 h-8"></i>
+      </div>
+      <div class="space-y-1 w-full">
+        <!-- JUDUL MODAL: Generate PDF Stok -->
+        <h3 class="text-base font-bold text-gray-800">Generate PDF Stok</h3>
+        <p class="text-[10px] text-gray-400 font-semibold px-4 leading-relaxed">
+          PDF stok akan disimpan ke folder <strong>SHARE_STOK</strong> sebagai <code class="bg-gray-100 text-amber-700 px-1 py-0.5 rounded font-mono">Stok_terbaru.pdf</code> dan disalin otomatis ke folder <strong>ARSIP</strong>.
+        </p>
+      </div>
+      
+      <!-- Action Buttons (Initial): Batal dan Proses -->
+      <div id="stokPdfActions" class="w-full pt-2 flex flex-col gap-2">
+        <button id="btn-process-stok-pdf" onclick="processStokPdf()" class="w-full bg-theme-primary hover:bg-amber-600 active:scale-[0.98] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2">
+          <i data-lucide="cpu" class="w-4 h-4"></i>
+          <span>Proses</span>
+        </button>
+        <button onclick="hideStokPdfModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-500 py-2.5 rounded-xl text-xs font-bold tracking-wider uppercase transition-all">
+          Batal
+        </button>
+      </div>
+
+      <!-- Result Buttons (After Success): Buka PDF dan Tutup -->
+      <div id="stokPdfResults" class="w-full pt-2 flex flex-col gap-2 hidden">
+        <div class="bg-emerald-50 text-emerald-700 text-[10px] font-semibold p-3 rounded-xl border border-emerald-100 flex flex-col gap-1 text-left mb-2">
+          <span class="flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 flex-shrink-0 text-emerald-600"></i> Berhasil disimpan di SHARE_STOK!</span>
+          <span id="stokPdfArchiveText" class="flex items-center gap-1"><i data-lucide="archive" class="w-3.5 h-3.5 flex-shrink-0 text-emerald-600"></i> Tersimpan di ARSIP</span>
+        </div>
+        <a id="stokPdfViewLink" href="#" target="_blank" class="w-full bg-theme-primary hover:bg-amber-600 active:scale-[0.98] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all shadow-md block text-center">
+          Buka PDF
+        </a>
+        <button onclick="hideStokPdfModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-500 py-2.5 rounded-xl text-xs font-bold tracking-wider uppercase transition-all">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<script>
+  function renderStokView() {
+    const container = document.getElementById('stokListContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    // ATUR TAMPILAN FAB PDF SECARA DINAMIS: Hanya ADMIN dan OWNER yang bisa melihat
+    const controls = document.getElementById('stokAdminControls');
+    if (controls) {
+      const role = (state.currentRole || '').toUpperCase();
+      if (role === 'ADMIN' || role === 'OWNER') {
+        controls.classList.remove('hidden');
+      } else {
+        controls.classList.add('hidden');
+      }
+    }
+
+    const stokData = db.stok || [];
+    const filtered = stokData.filter(item => {
+      const name = getVal(item, 'nama_barang', 1);
+      return name && name.toLowerCase().includes(state.searchQuery.toLowerCase());
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-16 text-gray-400">
+          <i data-lucide="package-open" class="w-12 h-12 mx-auto mb-2 text-gray-300"></i>
+          <p class="text-sm font-semibold">Barang tidak ditemukan</p>
+        </div>
+      `;
+      lucide.createIcons();
+      return;
+    }
+
+    filtered.forEach(item => {
+      const name = getVal(item, 'nama_barang', 1);
+      const qty = parseInt(getVal(item, 'qty', 2)) || 0;
+      const satuan = getVal(item, 'satuan', 3) || 'PCS';
+      
+      const card = document.createElement('div');
+      card.className = "bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between";
+      
+      let badgeClass = "bg-emerald-50 text-emerald-600";
+      if (qty === 0) {
+        badgeClass = "bg-rose-50 text-rose-600";
+      } else if (qty < 10) {
+        badgeClass = "bg-amber-50 text-amber-600";
+      }
+
+      card.innerHTML = `
+        <div class="flex-1 min-w-0 pr-4">
+          <span class="block font-bold text-gray-800 tracking-wide truncate uppercase">${name}</span>
+          <span class="inline-block bg-gray-100 text-gray-500 font-bold px-1.5 py-0.5 rounded text-[8px] mt-1">${satuan}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="px-3.5 py-1.5 rounded-xl text-center min-w-16 ${badgeClass}">
+            <span class="block text-sm font-extrabold leading-none">${qty}</span>
+            <span class="text-[7px] font-black tracking-widest uppercase">STOK</span>
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+    lucide.createIcons();
+  }
+
+  // --- POPUP STOK PDF SYSTEM (ADMIN & OWNER ONLY) ---
+  function openStokPdfModal() {
+    const modal = document.getElementById('stokPdfModal');
+    const actions = document.getElementById('stokPdfActions');
+    const results = document.getElementById('stokPdfResults');
+
+    if (actions) actions.classList.remove('hidden');
+    if (results) results.classList.add('hidden');
+
+    if (modal) {
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+  }
+
+  function hideStokPdfModal() {
+    const modal = document.getElementById('stokPdfModal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function processStokPdf() {
+    const btn = document.getElementById('btn-process-stok-pdf');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<span class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-2"></span> MEMPROSES...`;
+    }
+
+    callServer('generateStokPdf')
+      .then(response => {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="cpu" class="w-4 h-4"></i> <span>Proses</span>`;
+        }
+
+        if (response && response.success) {
+          showToast("✅ Berhasil ekspor & arsipkan stok barang!");
+          
+          const actions = document.getElementById('stokPdfActions');
+          const results = document.getElementById('stokPdfResults');
+          const viewBtn = document.getElementById('stokPdfViewLink');
+          const archiveText = document.getElementById('stokPdfArchiveText');
+
+          if (actions) actions.classList.add('hidden');
+          if (results) results.classList.remove('hidden');
+          if (viewBtn) viewBtn.href = response.viewUrl;
+          if (archiveText) {
+            archiveText.innerHTML = `<i data-lucide="archive" class="w-3.5 h-3.5 flex-shrink-0 text-emerald-600"></i> <span class="truncate">Tersimpan di ARSIP: ${response.archiveFilename}</span>`;
+          }
+          
+          lucide.createIcons();
+        } else {
+          showToast("⚠️ Gagal: " + (response ? response.error : 'Format ditolak server'));
+        }
+      })
+      .catch(error => {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="cpu" class="w-4 h-4"></i> <span>Proses</span>`;
+        }
+        showToast("⚠️ Gangguan API: " + error.message);
+      });
+  }
+
+  window.renderStokView = renderStokView;
+  window.openStokPdfModal = openStokPdfModal;
+  window.hideStokPdfModal = hideStokPdfModal;
+  window.processStokPdf = processStokPdf;
+</script>
