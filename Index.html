@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <!-- ================= VIEWPORT OPTIMIZATION: ANTI ZOOM & MOBILE-LOCK ================= -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Ellis Estetika - Sistem Gudang & Klinik</title>
+  
+  <!-- ================= PWA APPLE & ANDROID CONFIGURATION ================= -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Ellis Gudang">
+  <meta name="theme-color" content="#D9B56B">
+  
+  <!-- Google Drive Cloud Hosted Launcher Icon -->
+  <link class="streaming-anchor" rel="apple-touch-icon" href="https://drive.google.com/thumbnail?id=1ednN-pYOxPDz9J-d0LJKSxqyMJ0FFm4k&sz=w512">
+  <link rel="shortcut icon" href="https://drive.google.com/thumbnail?id=1ednN-pYOxPDz9J-d0LJKSxqyMJ0FFm4k&sz=w512">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts (Inter) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    /* ================= ANTI-ZOOM & SCROLL COVERS ================= */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      height: var(--app-height, 100dvh); 
+      overflow: hidden !important;
+      overflow-x: hidden !important;
+      overflow-y: hidden !important;
+      position: fixed;
+      left: 0;
+      top: 0;
+      
+      -webkit-text-size-adjust: 100%;
+      -moz-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      
+      touch-action: none;
+      overscroll-behavior: none !important;
+      overscroll-behavior-y: none !important;
+      overscroll-behavior-x: none !important;
+      
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f4f6;
+    }
+
+    main, .overflow-y-auto {
+      overscroll-behavior: contain !important;
+      overscroll-behavior-y: contain !important;
+      -webkit-overflow-scrolling: touch !important;
+      touch-action: pan-y !important;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .bg-theme-primary { background-color: #D9B56B; }
+    .text-theme-primary { color: #D9B56B; }
+    .border-theme-primary { border-color: #D9B56B; }
+  </style>
+</head>
+<body class="flex justify-center w-full h-full bg-gray-100">
+
+  <!-- Container Utama Frame Mobile-Responsive -->
+  <div class="w-full md:max-w-md bg-white flex flex-col md:shadow-2xl relative overflow-x-hidden overflow-y-hidden h-full md:border-x border-gray-200" style="touch-action: pan-y; height: var(--app-height, 100dvh);">
+    
+    <!-- ================= NOTIFIKASI TOAST ================= -->
+    <div id="toast" class="hidden fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-800/95 text-white px-5 py-3 rounded-full text-xs font-semibold shadow-2xl z-[110] flex items-center gap-2 transition-all">
+      <span id="toastMessage">Pesan Notifikasi</span>
+    </div>
+
+    <!-- ================= LOADING OVERLAY ================= -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-[100] flex flex-col items-center justify-center transition-all duration-300">
+      <div class="relative flex items-center justify-center">
+        <div class="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-theme-primary"></div>
+        <span class="absolute flex items-center justify-center w-14 h-14 rounded-full bg-theme-primary shadow-md">
+          <svg class="w-9 h-9 text-white" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M75 35H35V45H65V55H35V65H75V75H25V25H75V35Z" fill="white" />
+          </svg>
+        </span>
+      </div>
+      <p id="loadingText" class="mt-5 text-xs font-bold text-amber-700 tracking-wider animate-pulse uppercase">SINKRONISASI DATA...</p>
+    </div>
+
+    <!-- ================= ERROR MODAL INTERAKTIF ================= -->
+    <div id="errorModal" class="hidden fixed inset-0 bg-black/60 z-[120] flex flex-col items-center justify-center p-6 transition-all duration-300">
+      <div class="w-full max-w-sm bg-white p-6 rounded-3xl shadow-2xl border border-rose-100 flex flex-col items-center text-center space-y-4">
+        <div class="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center text-rose-500">
+          <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+        </div>
+        <div class="space-y-1">
+          <h3 class="text-lg font-bold text-gray-800">Gangguan Sistem</h3>
+          <p id="errorModalText" class="text-xs text-gray-500 font-medium">Gagal memproses data spreadsheet.</p>
+        </div>
+        <div class="w-full pt-2 flex flex-col gap-2">
+          <button id="errorRetryBtn" onclick="retryLastAction()" class="w-full bg-rose-500 hover:bg-rose-600 active:scale-[0.98] text-white py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all shadow-md">
+            COBA LAGI SINKRONISASI
+          </button>
+          <button onclick="hideErrorModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 py-2.5 rounded-xl text-xs font-bold tracking-wider uppercase transition-all">
+            LEWATI
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= VIEW MODULES INCLUDE ================= -->
+    <?!= include('Login'); ?>
+    <?!= include('Dashboard'); ?>
+
+  </div>
+
+  <!-- ================= MASTER CONTROLLER JAVASCRIPT ================= -->
+  <script>
+    function updateAppHeight() {
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    }
+    updateAppHeight();
+    window.addEventListener('resize', updateAppHeight);
+    window.addEventListener('orientationchange', updateAppHeight);
+
+    const db = {
+      stok: [],
+      klinik: [],
+      supplier: [],
+      order: [],
+      faktur: [],
+      return_barang: []
+    };
+
+    const state = {
+      activeView: 'login', // login | stok | klinik | clinic-detail | entry | order | return | return-detail | return-form | faktur
+      currentUser: null,
+      currentRole: null,
+      currentClinicId: null,
+      selectedClinicId: null,
+      searchQuery: ''
+    };
+
+    let lastActionFailed = null;
+
+    function callServer(functionName, ...args) {
+      return new Promise((resolve, reject) => {
+        if (typeof google === 'undefined' || !google.script || !google.script.run) {
+          reject(new Error("API Google Apps Script tidak terdeteksi."));
+          return;
+        }
+        
+        google.script.run
+          .withSuccessHandler(function(res) {
+            resolve(res);
+          })
+          .withFailureHandler(function(err) {
+            reject(err);
+          })
+          [functionName](...args);
+      });
+    }
+
+    function getVal(row, headerName, colIndex) {
+      if (!row) return "";
+      const key = headerName.toLowerCase().trim();
+      if (row[key] !== undefined && row[key] !== "") {
+        return row[key];
+      }
+      const fallbackKey = "_col" + colIndex;
+      if (row[fallbackKey] !== undefined) {
+        return row[fallbackKey];
+      }
+      return "";
+    }
+
+    function showLoading(show, text) {
+      const overlay = document.getElementById('loadingOverlay');
+      const txt = document.getElementById('loadingText');
+      if (txt && text) txt.innerText = text;
+      
+      if (overlay) {
+        if (show) {
+          overlay.classList.remove('hidden', 'opacity-0');
+        } else {
+          overlay.classList.add('opacity-0');
+          setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+      }
+    }
+
+    function showErrorModal(message, retryFunction) {
+      const modal = document.getElementById('errorModal');
+      const txt = document.getElementById('errorModalText');
+      const retryBtn = document.getElementById('errorRetryBtn');
+      
+      if (txt) txt.innerText = message;
+      if (retryFunction) {
+        lastActionFailed = retryFunction;
+        if (retryBtn) retryBtn.classList.remove('hidden');
+      } else {
+        lastActionFailed = null;
+        if (retryBtn) retryBtn.classList.add('hidden');
+      }
+      
+      if (modal) {
+        modal.classList.remove('hidden');
+        lucide.createIcons();
+      }
+    }
+
+    function hideErrorModal() {
+      const modal = document.getElementById('errorModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function retryLastAction() {
+      hideErrorModal();
+      if (typeof lastActionFailed === 'function') {
+        lastActionFailed();
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const msg = document.getElementById('toastMessage');
+      if (toast && msg) {
+        msg.innerText = message;
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 3000);
+      }
+    }
+
+    function fetchData() {
+      showLoading(true, "MENYINKRONKAN SPREADSHEET...");
+      const refreshIcon = document.getElementById('refreshIcon');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+      callServer('getInitialAppData')
+        .then(response => {
+          if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+          showLoading(false);
+          
+          if (response && response.success) {
+            db.stok = response.stok || [];
+            db.klinik = response.klinik || [];
+            db.supplier = response.supplier || [];
+            db.order = response.order || [];
+            db.faktur = response.faktur || [];
+            db.return_barang = response.return_barang || [];
+            
+            try {
+              renderActiveView();
+              if (typeof initEntryDropdowns === 'function') initEntryDropdowns();
+              if (typeof initOrderDropdowns === 'function') initOrderDropdowns();
+              if (typeof initReturnDropdowns === 'function') initReturnDropdowns();
+              if (typeof initFakturViews === 'function') initFakturViews();
+            } catch (err) {
+              console.error(err);
+              showErrorModal("Gagal memuat visual sistem: " + err.message, fetchData);
+            }
+          } else {
+            const errorMsg = response ? response.error : 'Format ditolak oleh server.';
+            showErrorModal(errorMsg, fetchData);
+          }
+        })
+        .catch(error => {
+          if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+          showLoading(false);
+          console.error(error);
+          showErrorModal("Gangguan komunikasi server: " + error.message, fetchData);
+        });
+    }
+
+    function isUserAssignedToClinic(clinicId) {
+      const userRole = (state.currentRole || '').toUpperCase();
+      if (userRole === 'ADMIN' || userRole === 'OWNER') return true;
+      if (userRole === 'VIEWER') return false;
+      
+      if (state.currentClinicId && state.currentClinicId === clinicId) {
+        return true;
+      }
+      
+      const clinic = db.klinik.find(c => getVal(c, 'id_klinik', 0) === clinicId);
+      if (clinic) {
+        const clinicName = (getVal(clinic, 'nama_klinik', 1) || '').toLowerCase().trim();
+        const clinicIdStr = (getVal(clinic, 'id_klinik', 0) || '').toLowerCase().trim();
+        const username = (state.currentUser || '').toLowerCase().trim();
+        
+        if (clinicName === username || clinicIdStr === username || clinicName.includes(username) || username.includes(clinicName)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function renderActiveView() {
+      console.log('renderActiveView start');
+      console.log('activeView:', state.activeView);
+
+      const screens = [
+        'screen-stok',
+        'screen-entry',
+        'screen-klinik',
+        'screen-clinic-detail',
+        'screen-form-order',
+        'screen-return',
+        'screen-return-detail',
+        'screen-form-return',
+        'screen-faktur'
+      ];
+
+      screens.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+
+      const headerTitle = document.getElementById('headerTitle');
+      const backBtn = document.getElementById('backBtn');
+      const menuBtn = document.getElementById('menuBtn');
+      
+      const searchContainer = document.getElementById('searchBarContainer');
+      if (searchContainer) {
+        searchContainer.classList.add('hidden');
+      }
+
+      const searchInp = document.getElementById('searchInput');
+      if (searchInp) {
+        searchInp.value = '';
+      }
+      state.searchQuery = '';
+
+      switch (state.activeView) {
+        case 'stok':
+          const scrStok = document.getElementById('screen-stok');
+          if (scrStok) scrStok.classList.remove('hidden');
+
+          if (headerTitle) headerTitle.innerText = "STOK GUDANG";
+          if (backBtn) backBtn.classList.add('hidden');
+          if (menuBtn) menuBtn.classList.remove('hidden');
+
+          if (typeof renderStokView === 'function') renderStokView();
+          if (typeof updateTabIndicator === 'function') updateTabIndicator('stok');
+          break;
+
+        case 'entry':
+          const scrEntry = document.getElementById('screen-entry');
+          if (scrEntry) scrEntry.classList.remove('hidden');
+
+          if (headerTitle) headerTitle.innerText = "BARANG MASUK";
+          if (backBtn) backBtn.classList.add('hidden');
+          if (menuBtn) menuBtn.classList.remove('hidden');
+
+          if (typeof resetEntryForm === 'function') resetEntryForm();
+          if (typeof updateTabIndicator === 'function') updateTabIndicator('entry');
+          break;
+
+        case 'klinik':
+          const scrKlinik = document.getElementById('screen-klinik');
+          if (scrKlinik) scrKlinik.classList.remove('hidden');
+
+          if (headerTitle) headerTitle.innerText = "KLINIK CABANG";
+          if (backBtn) backBtn.classList.add('hidden');
+          if (menuBtn) menuBtn.classList.remove('hidden');
+
+          if (typeof renderKlinikGrid === 'function') renderKlinikGrid();
+          if (typeof updateTabIndicator === 'function') updateTabIndicator('klinik');
+          break;
+
+        case 'clinic-detail':
+          const scrDetail = document.getElementById('screen-clinic-detail');
+          if (scrDetail) scrDetail.classList.remove('hidden');
+
+          const clinic = db.klinik.find(c => getVal(c, 'id_klinik', 0) === state.selectedClinicId);
+          if (headerTitle) headerTitle.innerText = clinic ? getVal(clinic, 'nama_klinik', 1) : "DETAIL KLINIK";
+          
+          if (backBtn) backBtn.classList.remove('hidden');
+          if (menuBtn) menuBtn.classList.add('hidden');
+
+          if (typeof renderClinicDetailView === 'function') renderClinicDetailView();
+          break;
+
+        case 'order':
+          if (!isUserAssignedToClinic(state.selectedClinicId)) {
+            showToast("⚠️ Anda tidak diizinkan membuat order di klinik ini!");
+            state.activeView = 'clinic-detail';
+            renderActiveView();
+            break;
+          }
+
+          const scrOrder = document.getElementById('screen-form-order');
+          if (scrOrder) scrOrder.classList.remove('hidden');
+
+          const ordClinic = db.klinik.find(c => getVal(c, 'id_klinik', 0) === state.selectedClinicId);
+          if (headerTitle) {
+            headerTitle.innerText = ordClinic ? `${getVal(ordClinic, 'nama_klinik', 1).substring(0, 8)} FORM` : "FORM ORDER";
+          }
+          
+          if (backBtn) backBtn.classList.remove('hidden');
+          if (menuBtn) menuBtn.classList.add('hidden');
+
+          if (typeof setupOrderInputs === 'function') setupOrderInputs();
+          break;
+
+        case 'return':
+          const scrReturn = document.getElementById('screen-return');
+          if (scrReturn) scrReturn.classList.remove('hidden');
+
+          if (headerTitle) headerTitle.innerText = "RETUR BARANG";
+          if (backBtn) backBtn.classList.add('hidden');
+          if (menuBtn) menuBtn.classList.remove('hidden');
+
+          if (typeof renderReturnView === 'function') renderReturnView();
+          if (typeof updateTabIndicator === 'function') updateTabIndicator('return');
+          break;
+
+        case 'return-detail':
+          const scrReturnDetail = document.getElementById('screen-return-detail');
+          if (scrReturnDetail) scrReturnDetail.classList.remove('hidden');
+
+          const retClinic = db.klinik.find(c => getVal(c, 'id_klinik', 0) === state.selectedClinicId);
+          if (headerTitle) headerTitle.innerText = retClinic ? `${getVal(retClinic, 'nama_klinik', 1)} RETUR` : "RIWAYAT RETUR";
+          
+          if (backBtn) backBtn.classList.remove('hidden');
+          if (menuBtn) menuBtn.classList.add('hidden');
+
+          if (typeof renderReturnDetailView === 'function') renderReturnDetailView();
+          break;
+
+        case 'return-form':
+          if (!isUserAssignedToClinic(state.selectedClinicId)) {
+            showToast("⚠️ Anda tidak diizinkan membuat retur di klinik ini!");
+            state.activeView = 'clinic-detail';
+            renderActiveView();
+            break;
+          }
+
+          const scrFormReturn = document.getElementById('screen-form-return');
+          if (scrFormReturn) scrFormReturn.classList.remove('hidden');
+
+          const retFormClinic = db.klinik.find(c => getVal(c, 'id_klinik', 0) === state.selectedClinicId);
+          if (headerTitle) {
+            headerTitle.innerText = retFormClinic ? `${getVal(retFormClinic, 'nama_klinik', 1).substring(0, 8)} RETUR` : "FORM RETUR";
+          }
+          
+          if (backBtn) backBtn.classList.remove('hidden');
+          if (menuBtn) menuBtn.classList.add('hidden');
+
+          if (typeof setupReturnInputs === 'function') setupReturnInputs();
+          break;
+
+        case 'faktur':
+          if (state.currentRole !== 'OWNER') {
+            showToast("⚠️ Akses ditolak! Menu Faktur hanya untuk Owner.");
+            state.activeView = 'stok';
+            renderActiveView();
+            break;
+          }
+
+          const scrFaktur = document.getElementById('screen-faktur');
+          if (scrFaktur) scrFaktur.classList.remove('hidden');
+
+          if (headerTitle) headerTitle.innerText = "FAKTUR & REKAP";
+          if (backBtn) backBtn.classList.add('hidden');
+          if (menuBtn) menuBtn.classList.remove('hidden');
+
+          if (typeof initFakturViews === 'function') initFakturViews();
+          if (typeof updateTabIndicator === 'function') updateTabIndicator('faktur');
+          break;
+      }
+      
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+      }
+    }
+
+    function adjustQty(elementId, amount) {
+      const input = document.getElementById(elementId);
+      if (input) {
+        let val = parseInt(input.value) || 0;
+        val += amount;
+        if (val < 0) val = 0;
+        input.value = val;
+      }
+    }
+
+    function switchView(viewName) {
+      if (viewName === 'entry' && state.currentRole !== 'ADMIN' && state.currentRole !== 'OWNER') {
+        showToast("⚠️ Menu Entry hanya dapat diakses oleh Admin atau Owner!");
+        return;
+      }
+      if (viewName === 'faktur' && state.currentRole !== 'OWNER') {
+        showToast("⚠️ Menu Faktur hanya dapat diakses oleh Owner!");
+        return;
+      }
+      state.activeView = viewName;
+      renderActiveView();
+    }
+
+    function goBack() {
+      if (state.activeView === 'order' || state.activeView === 'return-form') {
+        state.activeView = 'clinic-detail';
+      } else if (state.activeView === 'clinic-detail') {
+        state.activeView = 'klinik';
+      } else if (state.activeView === 'return-detail') {
+        state.activeView = 'return';
+      }
+      renderActiveView();
+    }
+
+    function getTodayFormatted() {
+      const today = new Date();
+      return `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+    }
+
+    function formatAnyDateString(dateObj) {
+      if (!dateObj) return "";
+      const str = dateObj.toString();
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) return str;
+      const d = parseDate(str);
+      if (d.getTime() === 0) return str;
+      return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+    }
+
+    function parseDate(dateStr) {
+      if (!dateStr) return new Date(0);
+      const str = dateStr.toString().trim();
+      const parts = str.split('/');
+      if (parts.length === 3) {
+        return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+      }
+      const d = new Date(str);
+      return isNaN(d.getTime()) ? new Date(0) : d;
+    }
+
+    window.addEventListener('load', () => {
+      let startY = 0;
+      let startX = 0;
+
+      updateAppHeight();
+
+      document.addEventListener('touchstart', function (event) {
+        startY = event.touches[0].pageY;
+        startX = event.touches[0].pageX;
+
+        if (event.touches.length > 1) {
+          event.preventDefault();
+        }
+      }, { passive: false });
+      
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+          event.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, false);
+
+      document.addEventListener('touchmove', function (e) {
+        let currentX = e.touches[0].pageX;
+        let currentY = e.touches[0].pageY;
+        let deltaX = Math.abs(currentX - startX);
+        let deltaY = Math.abs(currentY - startY);
+
+        if (deltaX > deltaY && deltaX > 4) {
+          if (e.cancelable) e.preventDefault();
+          return;
+        }
+
+        let isScrollable = false;
+        let scrollableAncestor = null;
+        let el = e.target;
+        
+        while (el && el !== document.body && el !== document.documentElement) {
+          if (el.classList && (el.classList.contains('overflow-y-auto') || el.id === 'sidebar' || el.tagName === 'MAIN')) {
+            if (el.scrollHeight > el.clientHeight) {
+              isScrollable = true;
+              scrollableAncestor = el;
+              break;
+            }
+          }
+          el = el.parentNode;
+        }
+        
+        if (!isScrollable || !scrollableAncestor) {
+          if (e.cancelable) e.preventDefault();
+          return;
+        }
+
+        let scrollTop = scrollableAncestor.scrollTop;
+        let scrollHeight = scrollableAncestor.scrollHeight;
+        let clientHeight = scrollableAncestor.clientHeight;
+        let direction = currentY - startY;
+
+        if (scrollTop <= 0 && direction > 0) {
+          if (e.cancelable) e.preventDefault();
+        }
+        else if (scrollTop + clientHeight >= scrollHeight && direction < 0) {
+          if (e.cancelable) e.preventDefault();
+        }
+      }, { passive: false });
+    });
+
+    window.fetchData = fetchData;
+    window.switchView = switchView;
+    window.goBack = goBack;
+    window.retryLastAction = retryLastAction;
+    window.hideErrorModal = hideErrorModal;
+    window.adjustQty = adjustQty;
+    window.isUserAssignedToClinic = isUserAssignedToClinic;
+
+    window.onload = function() {
+      updateAppHeight();
+      if (typeof window.checkLoginSession === 'function') {
+        window.checkLoginSession();
+      } else {
+        showLoading(false);
+      }
+    };
+  </script>
+</body>
+</html>
